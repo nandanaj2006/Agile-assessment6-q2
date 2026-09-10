@@ -117,18 +117,24 @@ public class TrafficManagementServiceTest {
     // BOUNDARY & ESCALATION TEST CASES
     // ==========================================
 
-    @Test
+        @Test
     public void testGenerateChallan_Boundary_OverSpeedingTierCalculations() {
         // Case A: Just under or at threshold (+25 Over Speed) -> Base Tier Fine
         Violation lowerTierSpeed = new Violation("OVER_SPEEDING", "Exp Way", LocalDateTime.now(), 105, 80);
         Challan ticketA = service.generateChallan(VALID_CAR_ID, lowerTierSpeed);
         assertEquals(1200.0, ticketA.getFineAmount());
 
-        // Case B: Critical delta threshold (+35 Over Speed) -> High Tier Fine
+        // Register a fresh vehicle for Case B to keep the boundary check isolated from repeat penalties
+        String FRESH_CAR_ID = "DL-05-AB-9999";
+        Vehicle freshCar = new Vehicle(FRESH_CAR_ID, "Charlie Green", VehicleType.CAR);
+        service.registerVehicle(freshCar);
+
+        // Case B: Critical delta threshold (+35 Over Speed) -> High Tier Fine (Isolated from repeat penalty)
         Violation extremeTierSpeed = new Violation("OVER_SPEEDING", "Exp Way", LocalDateTime.now().plusHours(1), 115, 80);
-        Challan ticketB = service.generateChallan(VALID_CAR_ID, extremeTierSpeed);
+        Challan ticketB = service.generateChallan(FRESH_CAR_ID, extremeTierSpeed);
         assertEquals(2500.0, ticketB.getFineAmount());
     }
+
 
     @Test
     public void testSystemEscalation_RecidivismAndProfileProgression() {
